@@ -1,0 +1,55 @@
+import   requests
+from  bs4  import  BeautifulSoup
+#获取网页的url
+def  get_url(url):
+    r=requests.get(url)
+    r.encoding=r.apparent_encoding
+    m=r.text.replace("&nbsp"," ")
+    n=r.content
+    return m,n
+#得到排行榜的电影名字，主演，简介，和链接
+def  get_data(html):
+    all_list=[]
+    soup=BeautifulSoup(html,'lxml')
+    all_Tags=soup.find('ul',class_="picList clearfix")
+    movies_Tags=all_Tags.find_all('li')
+    for  li  in  movies_Tags:
+        comment={}
+        try:
+            comment["title"]=li.find('span',class_="sTit").text.strip()
+            comment["link"]='http:'+str(li.find('span',class_="sTit").a["href"])
+            comment["actor"]=li.find('p',class_="pActor").text.strip()
+            comment["abstract"]=li.find('p',class_="pTxt pIntroHide").text.strip()
+            all_list.append(comment)
+        except:
+            continue
+    for words in all_list:
+        with open(r'C:\Users\13016\Desktop\movies_information.txt', 'a+',encoding='utf-8')   as  f:
+            f.write("标题：{}  \t\t主演：{} \t\t电影简介：{} \t\t电影链接：{} \t\n".format(words["title"], words["actor"],words["abstract"], words["link"]))
+    return all_list
+#将电影中的图片全部保存到电脑中，此时需要注意的是，图片在电脑中以二进制的形式存储
+def   get_picture(url):
+    comments=[]
+    soup=BeautifulSoup(url,'lxml')
+    ul_Tags=soup.find('ul',class_="picList clearfix")
+    list_Tags=ul_Tags.find_all('li')
+    for  li  in  list_Tags:
+        try:
+            comment={}
+            comment["title"]=li.find('div',class_="pic").img["title"]
+            comment["link"]='http:'+str(li.find('div',class_="pic").img["src"])
+            comments.append(comment)
+            print(comment)
+        except:
+            continue
+    #将图片的链接信息返回为二进制，然后保存到本地
+    for  words  in  comments:
+        pic_url=words["link"]
+        pic_content=get_url(pic_url)[1]
+        with open(r'C:\Users\13016\Desktop\图片\{}.jpg'.format(words["title"]),'wb+')   as  f:
+                f.write(pic_content)
+    return comments
+url='http://dianying.2345.com/top/'
+html=get_url(url)[0]
+get_data(html)
+get_picture(html)
